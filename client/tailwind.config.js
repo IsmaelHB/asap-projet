@@ -1,0 +1,34 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#e6f4ff',
+          100: '#bae0ff',
+          200: '#91caff',
+          300: '#69b1ff',
+          400: '#4096ff',
+          500: '#1677ff',
+          600: '#0958d9',
+          700: '#003eb3',
+          800: '#002c8c',
+          900: '#001d66',
+        },
+        doctolib: {
+          blue: '#0596DE',
+          'blue-dark': '#047AB8',
+          'blue-light': '#E6F4FB',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}

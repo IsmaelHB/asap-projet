@@ -1,0 +1,226 @@
+# SPEC – ASAP (Doctolib des artisans)
+
+## 1. Vision produit
+
+ASAP est une application web qui permet à des **particuliers** de trouver rapidement un **artisan** (plombier, électricien, peintre, etc.), voir ses prochaines disponibilités et **réserver un rendez-vous en ligne**, exactement comme Doctolib mais pour les artisans.
+
+Les **artisans** ont un espace pro pour :
+
+- configurer leur profil,
+- définir leurs **motifs de prestation** (comme des motifs de consultation sur Doctolib),
+- fixer un prix indicatif pour chaque prestation,
+- gérer leurs créneaux de disponibilité,
+- voir leurs rendez-vous.
+
+La V1 doit être fonctionnelle, propre, et prête à être utilisée par de vrais artisans.
+
+---
+
+## 2. Stack technique souhaitée
+
+- **Backend**
+  - Node.js + TypeScript
+  - Framework HTTP simple : Express (ou autre équivalent mais simple)
+  - ORM : Prisma (avec PostgreSQL)
+  - Architecture REST classique (`/api/...`)
+  - Auth artisan : email + mot de passe (JWT ou session, au choix)
+
+- **Base de données**
+  - PostgreSQL
+  - Migrations gérées (via Prisma)
+
+- **Frontend**
+  - React + Vite + TypeScript
+  - TailwindCSS pour le style
+  - React Router pour les routes
+  - Design inspiré de Doctolib : sobre, clair, responsive, mobile-first
+
+- **Organisation du projet**
+  - Monorepo simple :
+    - `/server` pour le backend
+    - `/client` pour le frontend
+  - Scripts npm clairs pour lancer chaque partie
+
+---
+
+## 3. Modèle de données (Postgres / Prisma)
+
+### 3.1. Table `users`
+
+Utilisateurs techniques (pour l’instant : seulement les artisans).
+
+- `id` (UUID, PK)
+- `email` (string, unique)
+- `password_hash` (string)
+- `role` (enum: `ARTISAN`, plus tard on pourra ajouter `ADMIN`)
+- `created_at` (DateTime)
+- `updated_at` (DateTime)
+
+### 3.2. Table `artisans`
+
+Profil public de l’artisan.
+
+- `id` (UUID, PK, FK vers `users.id`)
+- `slug` (string, unique, pour les URLs `/paris/plombier/jean-dupont`)
+- `name` (string, ex: "Jean Dupont")
+- `category` (string, ex: "plombier", "electricien")
+- `city` (string, ex: "paris" en minuscule)
+- `zipcode` (string)
+- `address` (string)
+- `lat` (float ou Decimal)
+- `lng` (float ou Decimal)
+- `phone` (string)
+- `description` (string, nullable)
+- `rating` (decimal, default 0)
+- `review_count` (int, default 0)
+- `price_level` (enum: `LOW`, `MEDIUM`, `HIGH` → affiché côté front par €, €€, €€€)
+- `service_radius_km` (decimal, default 10)
+- `is_active` (bool, default true)
+- `created_at` (DateTime)
+- `updated_at` (DateTime)
+
+### 3.3. Table `services` (motifs de prestation)
+
+Chaque ligne = motif de prestation (comme motif de consultation).
+
+- `id` (UUID, PK)
+- `artisan_id` (FK → `artisans.id`)
+- `name` (string, ex: "Dépannage urgent", "Fuite d’eau", "Installation WC")
+- `description` (string, nullable)
+- `price_min_cents` (int, prix indicatif minimum en centimes)
+- `price_max_cents` (int, prix indicatif maximum)
+- `estimated_duration_min` (int, durée estimée en minutes)
+- `complexity` (enum: `SIMPLE`, `MEDIUM`, `COMPLEX`)
+- `is_active` (bool, default true)
+- `created_at` (DateTime)
+- `updated_at` (DateTime)
+
+### 3.4. Table `availability` (créneaux)
+
+Slots de disponibilité génériques.
+
+- `id` (UUID, PK)
+- `artisan_id` (FK → `artisans.id`)
+- `start_ts` (DateTime, timezone aware)
+- `end_ts` (DateTime)
+- `is_booked` (bool, default false)
+- `created_at` (DateTime)
+- `updated_at` (DateTime)
+
+### 3.5. Table `appointments` (rendez-vous)
+
+- `id` (UUID, PK)
+- `artisan_id` (FK → `artisans.id`)
+- `service_id` (FK → `services.id`)
+- `customer_name` (string)
+- `customer_email` (string)
+- `customer_phone` (string)
+- `customer_notes` (string, nullable)
+- `start_ts` (DateTime)
+- `end_ts` (DateTime)
+- `status` (enum: `PENDING`, `CONFIRMED`, `CANCELLED`, `NO_SHOW`)
+- `cancellation_fee_cents` (int, default 0)
+- `created_at` (DateTime)
+- `updated_at` (DateTime)
+
+### 3.6. Table `artisan_live` (préparation géoloc future)
+
+Structure pour la V2/V3 (pas forcément utilisée pleinement en V1, mais créée).
+
+- `artisan_id` (PK, FK → `artisans.id`)
+- `current_lat` (float ou Decimal, nullable)
+- `current_lng` (float ou Decimal, nullable)
+- `status` (enum: `AVAILABLE`, `ON_JOB`, `OFFLINE`)
+- `next_free_at` (DateTime, nullable)
+- `updated_at` (DateTime)
+
+### 3.7. Index recommandés
+
+- Index sur `artisans(city, category)` pour les recherches par ville & métier
+- Index sur `availability(artisan_id, start_ts)` pour les créneaux
+- Index sur `appointments(artisan_id, start_ts)`
+
+---
+
+## 4. Règles métier importantes
+
+### 4.1. Motifs / prestations
+
+- Chaque artisan configure une liste de **services** (= motifs de prestation).
+- Chaque service a :
+  - un nom,
+  - une description éventuelle,
+  - une fourchette de prix (`price_min_cents` / `price_max_cents`),
+  - une durée estimée,
+  - un niveau de complexité.
+- Côté front, ces services doivent être affichés comme sur Doctolib : gros boutons “motifs”, avec en sous-titre la fourchette de prix et la durée (ex : "80–150 € • ~60 min").
+
+### 4.2. Créneaux de RDV
+
+- Pour la V1, la logique peut être simple :
+  - Les créneaux sont des blocs horaires (ex: 9h–12h, 14h–18h).
+  - Le front peut représenter les disponibilités par **jour** avec des indicateurs “matin dispo” / “après-midi dispo”.
+- L’API `availability` renvoie les jours avec des flags “morning_available” et “afternoon_available” calculés à partir des slots.
+
+### 4.3. Frais d’annulation
+
+Implémenter la logique suivante dans le backend (fonction utilitaire appelée lors de l’annulation) :
+
+- Si le client annule **dans les 5 minutes** après la création du RDV → `cancellation_fee_cents = 0`, peu importe la date du RDV.
+- Si le client annule **plus de 24h avant** le début du RDV → `cancellation_fee_cents = 0`.
+- Si le client annule **moins de 24h avant** le RDV **ET** plus de 5 minutes après la création → `cancellation_fee_cents = 2000` (20 €).
+- Si l’artisan marque le RDV comme `NO_SHOW` → `cancellation_fee_cents = 2000`.
+
+Pour l’instant, on ne gère pas le paiement réel, on stocke juste ce montant dans la base.
+
+---
+
+## 5. API REST (backend)
+
+Toutes les routes sont préfixées par `/api`.
+
+### 5.1. Routes publiques (côté client)
+
+#### `GET /api/search`
+
+Recherche d’artisans.
+
+- Query params :
+  - `city` (obligatoire)
+  - `category` (optionnel)
+  - `from` (date ISO, optionnel)
+  - `to` (date ISO, optionnel)
+- Réponse : liste d’artisans avec pour chacun :
+  - `id`, `slug`, `name`, `category`, `city`,
+  - `rating`, `review_count`,
+  - `price_level`,
+  - éventuellement 2–3 prochaines disponibilités façon “badge” (ex: “ven. matin”, “lun. après-midi”).
+
+#### `GET /api/artisans/:slug`
+
+Retourne le profil détaillé d’un artisan + ses services actifs.
+
+#### `GET /api/artisans/:id/availability?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+- Retourne pour chaque jour entre `from` et `to` :
+  - `date`
+  - `morning_available` (bool)
+  - `afternoon_available` (bool)
+
+#### `POST /api/appointments`
+
+Crée un rendez-vous.
+
+Body JSON :
+
+```json
+{
+  "artisan_id": "uuid",
+  "service_id": "uuid",
+  "slot_start": "2025-11-10T08:00:00Z",
+  "slot_end": "2025-11-10T09:00:00Z",
+  "customer_name": "string",
+  "customer_email": "string",
+  "customer_phone": "string",
+  "customer_notes": "string or null"
+}

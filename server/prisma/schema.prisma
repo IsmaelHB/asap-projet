@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  ARTISAN
+  ADMIN
+}
+
+enum PriceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Complexity {
+  SIMPLE
+  MEDIUM
+  COMPLEX
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+}
+
+// ENUMS IA (Indispensables pour le code TS)
+enum CallMode {
+  NONE
+  AUTO_AI
+  ARTISAN_DECIDES
+}
+
+enum CallStatus {
+  NOT_NEEDED
+  PENDING
+  DONE
+  FAILED
+}
+
+enum ArtisanLiveStatus {
+  AVAILABLE
+  ON_JOB
+  OFFLINE
+}
+
+// --- MODELS ---
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(ARTISAN)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  artisan      Artisan?
+
+  @@map("users")
+}
+
+model Artisan {
+  id              String        @id @default(uuid())
+  slug            String        @unique
+  name            String
+  category        String
+  city            String
+  zipcode         String
+  address         String
+  lat             Decimal       @db.Decimal(10, 8)
+  lng             Decimal       @db.Decimal(11, 8)
+  phone           String
+  description     String?
+  rating          Decimal       @default(0) @db.Decimal(3, 2)
+  reviewCount     Int           @default(0) @map("review_count")
+  priceLevel      PriceLevel    @default(MEDIUM) @map("price_level")
+  serviceRadiusKm Decimal       @default(10) @map("service_radius_km") @db.Decimal(5, 2)
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  user            User          @relation(fields: [id], references: [id], onDelete: Cascade)
+  services        Service[]
+  availability    Availability[]
+  appointments    Appointment[]
+  live            ArtisanLive?
+
+  @@index([city, category])
+  @@map("artisans")
+}
+
+model Service {
+  id                   String        @id @default(uuid())
+  artisanId            String        @map("artisan_id")
+  name                 String
+  description          String?
+  priceMinCents        Int           @map("price_min_cents")
+  priceMaxCents        Int           @map("price_max_cents")
+  estimatedDurationMin Int           @map("estimated_duration_min")
+  complexity           Complexity    @default(MEDIUM)
+  isActive             Boolean       @default(true) @map("is_active")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  artisan              Artisan       @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  appointments         Appointment[]
+
+  @@map("services")
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  artisanId String   @map("artisan_id")
+  startTs   DateTime @map("start_ts")
+  endTs     DateTime @map("end_ts")
+  isBooked  Boolean  @default(false) @map("is_booked")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  artisan   Artisan  @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+
+  @@index([artisanId, startTs])
+  @@map("availability")
+}
+
+model Appointment {
+  id                   String            @id @default(uuid())
+  artisanId            String            @map("artisan_id")
+  serviceId            String            @map("service_id")
+  customerName         String            @map("customer_name")
+  customerEmail        String            @map("customer_email")
+  customerPhone        String            @map("customer_phone")
+  customerNotes        String?           @map("customer_notes")
+  slotStart              DateTime          @map("start_ts")
+  slotEnd               DateTime          @map("end_ts")
+  status               AppointmentStatus @default(PENDING)
+  cancellationFeeCents Int               @default(0) @map("cancellation_fee_cents")
+
+  // CHAMPS IA
+  callMode             CallMode          @default(AUTO_AI)
+  callStatus           CallStatus        @default(PENDING)
+  callBy               String?
+  callSummary          String?           @db.Text
+
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  artisan              Artisan           @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  service              Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@index([artisanId, slotStart])
+  @@map("appointments")
+}
+
+model ArtisanLive {
+  artisanId    String            @id @map("artisan_id")
+  currentLat   Decimal?          @map("current_lat") @db.Decimal(10, 8)
+  currentLng   Decimal?          @map("current_lng") @db.Decimal(11, 8)
+  status       ArtisanLiveStatus @default(OFFLINE)
+  nextFreeAt   DateTime?         @map("next_free_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  artisan      Artisan           @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+
+  @@map("artisan_live")
+}
