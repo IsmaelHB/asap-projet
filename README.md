@@ -1,9 +1,9 @@
-🚀 ASAP – Plateforme de réservation pour artisans
+ASAP – Plateforme de réservation pour artisans
 
 Inspirée de Doctolib pour plombiers, serruriers, électriciens etc.
 
-📌 Projet visant à permettre aux particuliers de réserver un artisan en quelques clics, avec profil vérifié, disponibilités en temps réel et agent IA pour prise de rendez-vous automatique.
-🔥 Fonctionnalités Actuelles
+Projet visant à permettre aux particuliers de réserver un artisan en quelques clics, avec profil vérifié, disponibilités en temps réel et agent IA pour prise de rendez-vous automatique.
+Fonctionnalités Actuelles
 Fonction	État
 Auth artisan	✔ Login/Register
 Profil artisan	✔ Infos + services
@@ -13,7 +13,7 @@ Réservation	✔ Workflow complet
 Prisma DB + migrations	✔ Fonctionnel
 API Node Express	✔ Organisée et modulaire
 Front React + Tailwind	✔ UI fonctionnelle
-🧠 Objectif court-terme
+Objectif court-terme
 
 Améliorer UX du booking
 
@@ -23,7 +23,7 @@ Déployer prod
 
 Intégration IA vocal / WhatsApp pour prise de RDV
 
-🏗 Stack Technique
+Stack Technique
 Côté	Technos
 Front	React + Vite + TS + Tailwind
 Back	Node.js + Express
@@ -34,7 +34,7 @@ Build	Monorepo simple (client/server)
 git clone https://github.com/IsmaelHB/asap-projet.git
 cd asap-projet
 
-🚀 Backend
+Backend
 cd server
 npm install
 npx prisma migrate dev
@@ -43,12 +43,12 @@ npm run dev
 
 Créer un fichier .env basé sur .env.example.
 
-🎨 Frontend
+Frontend
 cd client
 npm install
 npm run dev
 
-📡 API endpoints (résumé)
+API endpoints (résumé)
 POST /auth/login
 POST /auth/register
 GET  /artisans
@@ -56,7 +56,7 @@ GET  /services?artisanId=
 GET  /availability?artisanId=&from=&to=
 POST /bookings
 
-🔥 TODO / Axes d’amélioration pour Claude
+TODO / Axes d’amélioration pour Claude
 
 (tu peux envoyer ce bloc avec ton repo)
 
