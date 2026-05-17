@@ -1,79 +1,65 @@
-ASAP – Plateforme de réservation pour artisans
+# ASAP – Plateforme de réservation pour artisans
 
-Inspirée de Doctolib pour plombiers, serruriers, électriciens etc.
+> Inspirée de Doctolib, ASAP permet aux particuliers de réserver un artisan qualifié en quelques clics.
 
-Projet visant à permettre aux particuliers de réserver un artisan en quelques clics, avec profil vérifié, disponibilités en temps réel et agent IA pour prise de rendez-vous automatique.
-Fonctionnalités Actuelles
-Fonction	État
-Auth artisan	✔ Login/Register
-Profil artisan	✔ Infos + services
-Recherche client	✔ Filtre + carte
-Créneaux de dispo	✔ CRUD dispo
-Réservation	✔ Workflow complet
-Prisma DB + migrations	✔ Fonctionnel
-API Node Express	✔ Organisée et modulaire
-Front React + Tailwind	✔ UI fonctionnelle
-Objectif court-terme
+## Fonctionnalités
 
-Améliorer UX du booking
+| Fonction | État |
+|---|---|
+| Auth artisan (Login/Register) | ✅ |
+| Profil artisan (infos + services) | ✅ |
+| Recherche client (filtres + carte) | ✅ |
+| Créneaux de disponibilité (CRUD) | ✅ |
+| Réservation (workflow complet) | ✅ |
+| Base de données Prisma + migrations | ✅ |
+| API Node/Express modulaire | ✅ |
+| Front React + Tailwind | ✅ |
 
-Ajouter paiement sécurisé (Stripe)
+## Stack technique
 
-Déployer prod
+| Côté | Technologies |
+|---|---|
+| Front | React + Vite + TypeScript + Tailwind |
+| Back | Node.js + Express |
+| Base de données | PostgreSQL + Prisma |
+| Auth | JWT |
+| Build | Monorepo simple (client/server) |
 
-Intégration IA vocal / WhatsApp pour prise de RDV
+## Installation locale
 
-Stack Technique
-Côté	Technos
-Front	React + Vite + TS + Tailwind
-Back	Node.js + Express
-DB	PostgreSQL + Prisma
-Auth	JWT
-Build	Monorepo simple (client/server)
-🛠 Installation locale
+```bash
 git clone https://github.com/IsmaelHB/asap-projet.git
 cd asap-projet
+```
 
-Backend
+**Backend**
+```bash
 cd server
 npm install
 npx prisma migrate dev
 npm run dev
+```
 
+> Créez un fichier `.env` basé sur `.env.example`
 
-Créer un fichier .env basé sur .env.example.
-
-Frontend
+**Frontend**
+```bash
 cd client
 npm install
 npm run dev
+```
 
-API endpoints (résumé)
-POST /auth/login
-POST /auth/register
-GET  /artisans
-GET  /services?artisanId=
-GET  /availability?artisanId=&from=&to=
-POST /bookings
+## API – Endpoints principaux
 
-TODO / Axes d’amélioration pour Claude
+POST   /auth/login
+POST   /auth/register
+GET    /artisans
+GET    /services?artisanId=
+GET    /availability?artisanId=&from=&to=
+POST   /bookings
 
-(tu peux envoyer ce bloc avec ton repo)
+## Roadmap
 
-Contrib souhaitée
-
-Vérifier architecture + optimisations
-
-Proposer amélioration du code/typage
-
-Aider à structurer intégration IA Voice/WhatsApp
-
-Améliorer logique répartition dispo → booking
-
-Questions ouvertes
-
-Comment optimiser Prisma + requêtes search ?
-
-Comment gérer Webhooks pour appel IA + confirmation RDV ?
-
-Architecture micro-fonctionnelle pour scaler ?
+- [ ] Paiement sécurisé (Stripe)
+- [ ] Déploiement en production
+- [ ] Intégration IA vocal / WhatsApp pour prise de RDV automatique
