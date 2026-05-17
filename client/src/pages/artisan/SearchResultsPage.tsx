@@ -106,19 +106,25 @@ export default function SearchResultsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {artisans.map((artisan: any) => (
-                <Card key={artisan.id}>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {artisan.name}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    {artisan.city} — {artisan.address}
-                  </p>
-                  <div className="mt-3">
-                    <Link to={`/artisan/${artisan.id}`}>
-                      <Button size="sm">Voir le profil</Button>
-                    </Link>
-                  </div>
-                </Card>
+                // ... (intérieur du map)
+<Card key={artisan.id}>
+  <h2 className="text-lg font-semibold text-gray-900">
+    {artisan.name}
+  </h2>
+  <p className="text-sm text-gray-600">
+    {artisan.city} — {artisan.address}
+  </p>
+  <div className="mt-3">
+    {/* 🔴 AVANT (Erreur) : On envoyait l'ID */}
+    {/* <Link to={`/artisan/${artisan.slug}`}> */}
+
+    {/* 🟢 APRÈS (Correction) : On envoie le SLUG */}
+    <Link to={`/artisan/${artisan.slug}`}>
+      <Button size="sm">Voir le profil</Button>
+    </Link>
+  </div>
+</Card>
+// ...
               ))}
             </div>
           )}
@@ -128,4 +134,3 @@ export default function SearchResultsPage() {
     </div>
   );
 }
-

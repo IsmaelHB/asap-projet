@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { AlertCircle, CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 
 type AlertType = 'error' | 'success' | 'info' | 'warning';
@@ -9,6 +8,7 @@ interface AlertProps {
   message: string;
   dismissible?: boolean;
   onDismiss?: () => void;
+  className?: string; 
 }
 
 export default function Alert({
@@ -17,6 +17,7 @@ export default function Alert({
   message,
   dismissible = false,
   onDismiss,
+  className = '',
 }: AlertProps) {
   const baseClasses = 'rounded-lg p-4 flex items-start text-sm';
 
@@ -37,7 +38,7 @@ export default function Alert({
       : Info;
 
   return (
-    <div className={`${baseClasses} ${variants[type]}`}>
+    <div className={`${baseClasses} ${variants[type]} ${className}`}>
       <Icon className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
       <div className="flex-1">
         {title && <p className="font-semibold mb-1">{title}</p>}

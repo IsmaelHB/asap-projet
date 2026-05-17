@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ArtisanLayout from '@/components/layout/ArtisanLayout';
 import Card from '@/components/common/Card';
@@ -31,23 +31,22 @@ export default function ServicesPage() {
   });
   const [formLoading, setFormLoading] = useState(false);
 
-  useEffect(() => {
-    fetchServices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const response: any = await api.listArtisanServices(token);
-      setServices(response.data);
-    } catch (error) {
-      console.error('Error fetching services:', error);
+      const response = await api.listArtisanServices(token);
+      setServices(response.data ?? []);
+    } catch {
+      setServices([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const handleOpenForm = (service?: Service) => {
     if (service) {
@@ -98,7 +97,7 @@ export default function ServicesPage() {
     try {
       const payload = {
         name: formData.name,
-        description: formData.description || undefined,
+        description: formData.description || null,
         priceMinCents: priceMin,
         priceMaxCents: priceMax,
         estimatedDurationMin: parseInt(formData.estimatedDurationMin),

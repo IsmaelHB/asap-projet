@@ -9,9 +9,14 @@ import Card from '@/components/common/Card';
 import Loader from '@/components/common/Loader';
 import Alert from '@/components/common/Alert';
 import { api } from '@/services/api';
-import { Artisan, Service, AvailabilityByDate } from '@/types';
-import { MapPin, Phone, Star, Euro, Clock } from 'lucide-react';
+import { Artisan, Service } from '@/types';
+import { MapPin, Clock, ChevronLeft, ChevronRight, CheckCircle, Camera } from 'lucide-react';
 import { isEmail, isPhoneFr, isRequired } from '@/utils/validation';
+
+interface AvailabilityDay {
+  date: string;
+  slots: string[];
+}
 
 export default function ArtisanProfilePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -19,364 +24,241 @@ export default function ArtisanProfilePage() {
 
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [services, setServices] = useState<Service[]>([]);
-  const [availability, setAvailability] = useState<AvailabilityByDate[]>([]);
+  const [availability, setAvailability] = useState<AvailabilityDay[]>([]);
+  
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedDate, setSelectedDate] = useState<AvailabilityByDate | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'morning' | 'afternoon' | null>(null);
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [calendarStartIndex, setCalendarStartIndex] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Form
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerNotes, setCustomerNotes] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
+  // Formulaire
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  // AJOUT : Description et Photos
+  const [customerNotes, setCustomerNotes] = useState(''); 
+  const [photos, setPhotos] = useState<File[]>([]); 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
-    const fetchArtisanProfile = async () => {
+    const loadData = async () => {
       if (!slug) return;
-
       try {
-        const response: any = await api.getArtisanBySlug(slug);
-        setArtisan(response.data.artisan);
-        setServices(response.data.services);
+        const resProfile: any = await api.getArtisanBySlug(slug);
+        setArtisan(resProfile.data.artisan);
+        setServices(resProfile.data.services);
 
-        if (response.data.artisan?.id) {
+        if (resProfile.data.artisan?.id) {
           const from = format(new Date(), "yyyy-MM-dd'T'00:00:00'Z'");
-          const to = format(addDays(new Date(), 7), "yyyy-MM-dd'T'23:59:59'Z'");
-
-          const availResponse: any = await api.getArtisanAvailability(
-            response.data.artisan.id,
-            from,
-            to
-          );
-          setAvailability(availResponse.data.availability);
+          const to = format(addDays(new Date(), 14), "yyyy-MM-dd'T'23:59:59'Z'");
+          const resAvail: any = await api.getArtisanAvailability(resProfile.data.artisan.id, from, to);
+          setAvailability(resAvail.data.availability);
         }
       } catch (err: any) {
-        setError(err.message);
+        setError("Impossible de charger l'artisan.");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchArtisanProfile();
+    loadData();
   }, [slug]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      const totalFiles = [...photos, ...newFiles].slice(0, 2); // Max 2 photos
+      setPhotos(totalFiles);
+    }
+  };
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
-
     if (!isRequired(customerName)) errors.customerName = 'Nom obligatoire';
     if (!isRequired(customerEmail)) errors.customerEmail = 'Email obligatoire';
     else if (!isEmail(customerEmail)) errors.customerEmail = 'Email invalide';
     if (!isRequired(customerPhone)) errors.customerPhone = 'Téléphone obligatoire';
     else if (!isPhoneFr(customerPhone)) errors.customerPhone = 'Numéro invalide';
+    
+    // Validation Description (Option 4)
+    if (!isRequired(customerNotes)) errors.customerNotes = 'Veuillez décrire le problème pour aider l\'artisan.';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleBooking = async () => {
-    if (!artisan || !selectedService || !selectedDate || !selectedPeriod) return;
-
+    if (!artisan || !selectedService || !selectedDateStr || !selectedTime) return;
     if (!validateForm()) return;
+
     setBookingLoading(true);
     setBookingError(null);
 
     try {
-      const date = new Date(selectedDate.date);
-      const startHour = selectedPeriod === 'morning' ? 9 : 14;
-      const endHour = selectedPeriod === 'morning' ? 12 : 18;
+      const start = new Date(`${selectedDateStr}T${selectedTime}:00`);
+      const end = new Date(start.getTime() + (selectedService.estimatedDurationMin || 30) * 60000);
 
-      date.setHours(startHour, 0, 0, 0);
-      const startTs = date.toISOString();
-
-      date.setHours(endHour, 0, 0, 0);
-      const endTs = date.toISOString();
-
-      const response: any = await api.createAppointment({
-        artisan_id: artisan.id,
-        service_id: selectedService.id,
-        slot_start: startTs,
-        slot_end: endTs,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        customer_notes: customerNotes || undefined,
+      // On utilise FormData pour envoyer texte + fichiers
+      const formData = new FormData();
+      formData.append('artisanId', artisan.id);
+      formData.append('serviceId', selectedService.id);
+      formData.append('slotStart', start.toISOString());
+      formData.append('slotEnd', end.toISOString());
+      formData.append('customerName', customerName);
+      formData.append('customerEmail', customerEmail);
+      formData.append('customerPhone', customerPhone);
+      formData.append('customerNotes', customerNotes); // Description obligatoire
+      
+      photos.forEach(photo => {
+        formData.append('photos', photo);
       });
 
-      navigate(`/booking/confirm/${response.data.id}`);
-    } catch (err: any) {
-      setBookingError(err.message);
+      // Appel API avec FormData (le navigateur gère le Content-Type multipart)
+      const res: any = await api.createAppointment(formData);
+      navigate(`/booking/confirm/${res.id}`);
+    } catch (e: any) {
+        console.error(e);
+        const msg = e.response?.data?.message || "Erreur lors de la réservation";
+        setBookingError(msg);
     } finally {
       setBookingLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <Loader message="Chargement du profil..." />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  if (loading) return <Loader message="Chargement..." />;
+  if (error || !artisan) return <div className="p-10 flex justify-center"><Alert type="error" title="Erreur" message={error || "Introuvable"} /></div>;
 
-  if (error || !artisan) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <main className="flex-grow flex items-center justify-center p-4">
-          <Card>
-            <Alert
-              type="error"
-              title="Artisan introuvable"
-              message={error || "Cet artisan n'existe pas."}
-            />
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const getPriceDisplay = (l: string) =>
-    l === 'LOW' ? '€' : l === 'MEDIUM' ? '€€' : '€€€';
+  const visibleDays = availability.slice(calendarStartIndex, calendarStartIndex + 4);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-
-      <main className="flex-grow py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-
-          {/* INFO ARTISAN */}
-          <Card className="mb-8">
-            <div className="flex justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold">{artisan.name}</h1>
-                <p className="capitalize text-gray-600 mb-4">{artisan.category}</p>
-
-                <div className="flex flex-col gap-2 text-sm text-gray-700">
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {artisan.address}, {artisan.zipcode} {artisan.city}
-                  </div>
-
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-1" />
-                    {artisan.phone}
-                  </div>
-
-                  <div className="flex items-center">
-                    <Euro className="h-4 w-4 mr-1" />
-                    {getPriceDisplay(artisan.priceLevel)}
-                  </div>
-                </div>
+      <main className="flex-grow py-8 px-4 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* GAUCHE */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <h1 className="text-2xl font-bold">{artisan.name}</h1>
+              <p className="text-gray-600 capitalize mb-2">{artisan.category}</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <MapPin className="h-4 w-4 mr-1" /> {artisan.city} ({artisan.zipcode})
               </div>
+            </Card>
 
-              <div className="flex items-center text-amber-500 ml-4">
-                <Star className="h-6 w-6 fill-current" />
-                <span className="ml-2 text-2xl font-semibold">{artisan.rating}</span>
-                <span className="text-gray-500 ml-1">({artisan.reviewCount})</span>
+            <div>
+              <h2 className="text-lg font-bold mb-3">1. Choisissez un motif</h2>
+              <div className="space-y-2">
+                {services.map(s => (
+                  <div 
+                    key={s.id}
+                    onClick={() => setSelectedService(s)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedService?.id === s.id ? 'border-doctolib-blue bg-doctolib-blue-light ring-1 ring-doctolib-blue' : 'bg-white hover:bg-gray-50'}`}
+                  >
+                    <div className="flex justify-between font-medium">
+                      <span>{s.name}</span><span>{s.priceMinCents/100}€</span>
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1"/> {s.estimatedDurationMin} min
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </Card>
-
-          {/* SERVICES */}
-          <h2 className="text-2xl font-bold mb-3">Prestations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {services.map((s) => (
-              <Card
-                key={s.id}
-                hover
-                className={`cursor-pointer ${
-                  selectedService?.id === s.id
-                    ? 'ring-2 ring-doctolib-blue bg-doctolib-blue-light'
-                    : ''
-                }`}
-                onClick={() => setSelectedService(s)}
-              >
-                <h3 className="font-semibold">{s.name}</h3>
-                {s.description && <p className="text-sm text-gray-600 mb-2">{s.description}</p>}
-                <div className="flex justify-between text-sm">
-                  <span className="text-doctolib-blue font-semibold">
-                    {s.priceMinCents / 100}€ - {s.priceMaxCents / 100}€
-                  </span>
-
-                  <span className="flex items-center text-gray-600">
-                    <Clock className="h-4 w-4 mr-1" />
-                    ~{s.estimatedDurationMin} min
-                  </span>
-                </div>
-              </Card>
-            ))}
           </div>
 
-          {/* RÉSERVATION */}
-          {selectedService && (
-  <Card>
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">Réserver un rendez-vous</h2>
-
-    {bookingError && (
-      <div className="mb-4">
-        <Alert type="error" message={bookingError} />
-      </div>
-    )}
-
-              {/* Dates */}
-              <h3 className="font-semibold mb-2">Choisissez une date</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                {availability
-                  .filter((d) => d.morningAvailable || d.afternoonAvailable)
-                  .map((d) => (
-                    <button
-                      key={d.date}
-                      onClick={() => {
-                        setSelectedDate(d);
-                        setSelectedPeriod(null);
-                      }}
-                      className={`border rounded-lg p-3 text-center ${
-                        selectedDate?.date === d.date
-                          ? 'border-doctolib-blue bg-doctolib-blue-light'
-                          : 'hover:border-doctolib-blue'
-                      }`}
-                    >
-                      <p className="font-semibold">
-                        {format(new Date(d.date), 'EEE dd MMM', { locale: fr })}
-                      </p>
-                    </button>
-                  ))}
-              </div>
-
-              {/* Créneaux */}
-              {selectedDate && (
+          {/* DROITE */}
+          <div className="lg:col-span-2">
+            <Card>
+              <h2 className="text-lg font-bold mb-4">2. Choisissez un créneau</h2>
+              
+              {!selectedService ? (
+                <div className="text-center py-8 bg-gray-50 rounded border border-dashed text-gray-500">Sélectionnez un motif à gauche.</div>
+              ) : (
                 <>
-                  <h3 className="font-semibold mb-2">Choisissez un créneau</h3>
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {selectedDate.morningAvailable && (
-                      <button
-                        onClick={() => setSelectedPeriod('morning')}
-                        className={`border rounded-lg p-4 text-center ${
-                          selectedPeriod === 'morning'
-                            ? 'border-doctolib-blue bg-doctolib-blue-light'
-                            : 'hover:border-doctolib-blue'
-                        }`}
-                      >
-                        <p className="font-semibold">Matin</p>
-                        <p className="text-gray-600 text-sm">9h - 12h</p>
-                      </button>
-                    )}
-
-                    {selectedDate.afternoonAvailable && (
-                      <button
-                        onClick={() => setSelectedPeriod('afternoon')}
-                        className={`border rounded-lg p-4 text-center ${
-                          selectedPeriod === 'afternoon'
-                            ? 'border-doctolib-blue bg-doctolib-blue-light'
-                            : 'hover:border-doctolib-blue'
-                        }`}
-                      >
-                        <p className="font-semibold">Après-midi</p>
-                        <p className="text-gray-600 text-sm">14h - 18h</p>
-                      </button>
-                    )}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <button onClick={() => setCalendarStartIndex(i => Math.max(0, i - 4))} disabled={calendarStartIndex === 0} className="p-1 hover:bg-gray-100 rounded disabled:opacity-30"><ChevronLeft/></button>
+                      <span className="font-semibold text-sm">Disponibilités</span>
+                      <button onClick={() => setCalendarStartIndex(i => i + 4)} className="p-1 hover:bg-gray-100 rounded"><ChevronRight/></button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-0 border-t border-l">
+                      {visibleDays.map(day => (
+                        <div key={day.date} className="border-r border-b min-h-[200px]">
+                          <div className="text-center py-2 bg-gray-50 border-b font-medium text-sm">
+                            {format(new Date(day.date), 'EEE d MMM', { locale: fr })}
+                          </div>
+                          <div className="p-2 flex flex-col gap-2 overflow-y-auto max-h-[300px] custom-scrollbar">
+                            {day.slots.length === 0 ? <div className="text-center text-gray-300">-</div> : day.slots.map(slot => (
+                                <button key={slot} onClick={() => { setSelectedDateStr(day.date); setSelectedTime(slot); }} className={`py-1.5 px-1 text-sm font-bold rounded transition-colors ${selectedDateStr === day.date && selectedTime === slot ? 'bg-doctolib-blue text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'}`}>{slot}</button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
+                  {selectedDateStr && selectedTime && (
+                    <div className="bg-gray-50 p-6 rounded border border-gray-200 animate-fade-in">
+                      <h3 className="font-bold flex items-center mb-4 text-gray-900"><CheckCircle className="h-5 w-5 text-green-600 mr-2"/> Finaliser le rendez-vous</h3>
+                      <p className="mb-4 text-sm text-gray-600">{selectedService.name} le <strong>{format(new Date(selectedDateStr), 'd MMMM', { locale: fr })} à {selectedTime}</strong></p>
+                      
+                      {bookingError && <Alert type="error" message={bookingError} className="mb-4" />}
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nom complet</label>
+                                <input className={`w-full p-2 border rounded text-sm ${formErrors.customerName ? 'border-red-500' : ''}`} value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                                {formErrors.customerName && <p className="text-xs text-red-500">{formErrors.customerName}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Téléphone</label>
+                                <input className={`w-full p-2 border rounded text-sm ${formErrors.customerPhone ? 'border-red-500' : ''}`} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                                {formErrors.customerPhone && <p className="text-xs text-red-500">{formErrors.customerPhone}</p>}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email</label>
+                            <input className={`w-full p-2 border rounded text-sm ${formErrors.customerEmail ? 'border-red-500' : ''}`} value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} />
+                            {formErrors.customerEmail && <p className="text-xs text-red-500">{formErrors.customerEmail}</p>}
+                        </div>
+
+                        {/* DESCRIPTION OBLIGATOIRE */}
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Description du problème <span className="text-red-500">*</span></label>
+                            <textarea className={`w-full p-2 border rounded text-sm ${formErrors.customerNotes ? 'border-red-500' : ''}`} rows={3} placeholder="Détaillez votre problème..." value={customerNotes} onChange={e => setCustomerNotes(e.target.value)} />
+                            {formErrors.customerNotes && <p className="text-xs text-red-500">{formErrors.customerNotes}</p>}
+                        </div>
+                        
+                        {/* PHOTOS */}
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Photos (Optionnel, max 2)</label>
+                            <div className="flex items-center gap-3">
+                                <label className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors text-sm text-gray-700">
+                                    <Camera className="h-4 w-4" /> Ajouter une photo
+                                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                                </label>
+                                <span className="text-xs text-gray-500">{photos.length} photo(s)</span>
+                            </div>
+                            {photos.length > 0 && <div className="mt-2 flex gap-2">{photos.map((p, i) => <div key={i} className="text-xs bg-gray-200 px-2 py-1 rounded truncate max-w-[150px]">{p.name}</div>)}</div>}
+                        </div>
+
+                        <Button fullWidth onClick={handleBooking} disabled={bookingLoading} size="lg">{bookingLoading ? 'Envoi...' : 'Confirmer le rendez-vous'}</Button>
+                        <p className="text-xs text-center text-gray-500 mt-2">Un assistant IA vous contactera peut-être pour valider les détails.</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
-
-              {/* Formulaire */}
-              {selectedPeriod && (
-                <div className="space-y-4">
-
-                  {/* Nom */}
-                  <div>
-                    <label className="text-sm font-medium">Nom complet *</label>
-                    <input
-                      value={customerName}
-                      onChange={(e) => {
-                        setCustomerName(e.target.value);
-                        setFormErrors((s) => ({ ...s, customerName: '' }));
-                      }}
-                      className={`w-full border rounded-lg px-4 py-2 ${
-                        formErrors.customerName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {formErrors.customerName && (
-                      <p className="text-sm text-red-600">{formErrors.customerName}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="text-sm font-medium">Email *</label>
-                    <input
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => {
-                        setCustomerEmail(e.target.value);
-                        setFormErrors((s) => ({ ...s, customerEmail: '' }));
-                      }}
-                      className={`w-full border rounded-lg px-4 py-2 ${
-                        formErrors.customerEmail ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {formErrors.customerEmail && (
-                      <p className="text-sm text-red-600">{formErrors.customerEmail}</p>
-                    )}
-                  </div>
-
-                  {/* Téléphone */}
-                  <div>
-                    <label className="text-sm font-medium">Téléphone *</label>
-                    <input
-                      value={customerPhone}
-                      onChange={(e) => {
-                        setCustomerPhone(e.target.value);
-                        setFormErrors((s) => ({ ...s, customerPhone: '' }));
-                      }}
-                      placeholder="06 12 34 56 78"
-                      className={`w-full border rounded-lg px-4 py-2 ${
-                        formErrors.customerPhone ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {formErrors.customerPhone && (
-                      <p className="text-sm text-red-600">{formErrors.customerPhone}</p>
-                    )}
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="text-sm font-medium">Notes (optionnel)</label>
-                    <textarea
-                      value={customerNotes}
-                      onChange={(e) => setCustomerNotes(e.target.value)}
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                    />
-                  </div>
-
-                  {/* Bouton */}
-                  <Button
-                    onClick={handleBooking}
-                    disabled={bookingLoading}
-                    fullWidth
-                  >
-                    {bookingLoading ? 'Réservation...' : 'Confirmer'}
-                  </Button>
-
-                </div>
-              )}
             </Card>
-          )}
+          </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

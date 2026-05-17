@@ -1,45 +1,27 @@
-// server/src/routes/index.ts
 import { Router } from "express";
 import artisanPrivateRoutes from "./artisan.routes";
 import appointmentRoutes from "./appointment.routes";
 import prisma from "../config/database";
+// CETTE LIGNE EST CRUCIALE
+import { getArtisanProfileBySlug } from "../controllers/artisan.controller";
 
 const router = Router();
 
 // ========= ROUTES PUBLIQUES =========
 
-// GET /api/artisans?city=lyon&search=plombier&categoryId=...&page=...
+// 1. Recherche (Liste)
 router.get("/artisans", async (req, res, next) => {
   try {
     const { city, search, categoryId } = req.query;
+    const where: any = {};
 
-    const where: any = {
-      // tu peux adapter ce filtre si tu as un champ isActive ou autre
-      // isActive: true,
-    };
-
-    if (city) {
-      // ex : "Lyon" -> "lyon"
-      where.city = String(city);
-      // ou where.citySlug = String(city).toLowerCase();
-    }
-
-    if (categoryId) {
-      where.categoryId = String(categoryId);
-    }
-
-    if (search) {
-      where.name = {
-        contains: String(search),
-        mode: "insensitive",
-      };
-    }
+    if (city) where.city = String(city).toLowerCase();
+    if (categoryId) where.category = String(categoryId);
+    if (search) where.name = { contains: String(search), mode: "insensitive" };
 
     const artisans = await prisma.artisan.findMany({
       where,
-      include: {
-        services: true, // si tu veux renvoyer les services
-      },
+      include: { services: true },
     });
 
     return res.json(artisans);
@@ -48,12 +30,19 @@ router.get("/artisans", async (req, res, next) => {
   }
 });
 
-// ========= ROUTES PRIVÉES ARTISAN (dashboard) =========
+// 2. LA ROUTE QUI VOUS MANQUE (Profil unique)
+// C'est celle qui provoque votre erreur "Impossible de charger..."
+router.get("/artisans/:slug", getArtisanProfileBySlug);
 
+// 3. LA ROUTE DES DISPONIBILITÉS (Pour le calendrier)
+import { getPublicAvailability } from "../controllers/public-availability.controller";
+router.get("/artisans/:id/availability", getPublicAvailability);
+
+
+// ========= ROUTES PRIVÉES ARTISAN =========
 router.use("/artisan", artisanPrivateRoutes);
 
 // ========= RENDEZ-VOUS =========
-
 router.use("/appointments", appointmentRoutes);
 
 export default router;

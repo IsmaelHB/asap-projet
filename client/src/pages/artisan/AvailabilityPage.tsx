@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ArtisanLayout from '@/components/layout/ArtisanLayout';
 import Card from '@/components/common/Card';
@@ -26,27 +26,26 @@ export default function AvailabilityPage() {
   const [formEndTime, setFormEndTime] = useState('12:00');
   const [formLoading, setFormLoading] = useState(false);
 
-  useEffect(() => {
-    fetchAvailability();
-  }, [token]);
-
-  const fetchAvailability = async () => {
+  const fetchAvailability = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
-
     try {
       const from = format(new Date(), "yyyy-MM-dd'T'00:00:00'Z'");
       const to = format(addDays(new Date(), 14), "yyyy-MM-dd'T'23:59:59'Z'");
-      const response: any = await api.listArtisanAvailability(token, from, to);
-      setSlots(response.data);
-    } catch (err: any) {
-      console.error('Error fetching availability:', err);
-      setError(err.message || 'Erreur lors du chargement des disponibilités');
+      const response = await api.listArtisanAvailability(token, from, to);
+      setSlots(response.data ?? []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erreur lors du chargement des disponibilités';
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [fetchAvailability]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

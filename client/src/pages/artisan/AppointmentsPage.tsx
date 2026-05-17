@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ArtisanLayout from '@/components/layout/ArtisanLayout';
 import Card from '@/components/common/Card';
@@ -21,26 +21,22 @@ export default function AppointmentsPage() {
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    fetchAppointments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, filterStatus]);
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const response: any = await api.listAppointments(
-        token,
-        filterStatus || undefined
-      );
-      setAppointments(response.data.appointments);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
+      const response = await api.listAppointments(token, filterStatus || undefined);
+      setAppointments(response.data?.appointments ?? []);
+    } catch {
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, filterStatus]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const handleUpdateStatus = async (id: string, status: AppointmentStatus) => {
     if (!token) return;
@@ -58,8 +54,9 @@ export default function AppointmentsPage() {
       await api.updateAppointmentStatus(token, id, status);
       setSuccessMessage(`Rendez-vous ${statusLabels[status]} avec succès`);
       await fetchAppointments();
-    } catch (error: any) {
-      alert(error.message || 'Erreur lors de la mise à jour');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la mise à jour';
+      alert(msg);
     }
   };
 
@@ -71,17 +68,16 @@ export default function AppointmentsPage() {
       await api.markNoShow(token, id);
       setSuccessMessage('Client marqué comme absent');
       await fetchAppointments();
-    } catch (error: any) {
-      alert(error.message || 'Erreur lors de la mise à jour');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la mise à jour';
+      alert(msg);
     }
   };
 
-  // Filtre période
   const filteredAppointments = appointments.filter((apt) => {
-    const aptDate = new Date(apt.startTs);
-    if (filterPeriod === 'today') {
-      return isToday(aptDate);
-    } else if (filterPeriod === 'week') {
+    const aptDate = new Date(apt.slotStart);
+    if (filterPeriod === 'today') return isToday(aptDate);
+    if (filterPeriod === 'week') {
       const weekLater = addDays(new Date(), 7);
       return aptDate >= new Date() && aptDate <= weekLater;
     }
@@ -125,13 +121,10 @@ export default function AppointmentsPage() {
           </div>
         )}
 
-        {/* Filtres */}
         <Card className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Statut
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Statut</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -146,9 +139,7 @@ export default function AppointmentsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Période
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Période</label>
               <select
                 value={filterPeriod}
                 onChange={(e) => setFilterPeriod(e.target.value)}
@@ -162,13 +153,10 @@ export default function AppointmentsPage() {
           </div>
         </Card>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="bg-blue-50 border border-blue-200">
             <p className="text-sm text-gray-600">Total</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {filteredAppointments.length}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{filteredAppointments.length}</p>
           </Card>
           <Card className="bg-orange-50 border border-orange-200">
             <p className="text-sm text-gray-600">En attente</p>
@@ -179,24 +167,17 @@ export default function AppointmentsPage() {
           <Card className="bg-green-50 border border-green-200">
             <p className="text-sm text-gray-600">Confirmés</p>
             <p className="text-2xl font-bold text-green-600">
-              {
-                filteredAppointments.filter((a) => a.status === 'CONFIRMED')
-                  .length
-              }
+              {filteredAppointments.filter((a) => a.status === 'CONFIRMED').length}
             </p>
           </Card>
           <Card className="bg-red-50 border border-red-200">
             <p className="text-sm text-gray-600">Annulés</p>
             <p className="text-2xl font-bold text-red-600">
-              {
-                filteredAppointments.filter((a) => a.status === 'CANCELLED')
-                  .length
-              }
+              {filteredAppointments.filter((a) => a.status === 'CANCELLED').length}
             </p>
           </Card>
         </div>
 
-        {/* Liste */}
         {filteredAppointments.length === 0 ? (
           <Card>
             <EmptyState
@@ -210,8 +191,7 @@ export default function AppointmentsPage() {
             {filteredAppointments
               .sort(
                 (a, b) =>
-                  new Date(a.startTs).getTime() -
-                  new Date(b.startTs).getTime()
+                  new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime()
               )
               .map((appointment) => (
                 <Card key={appointment.id}>
@@ -227,43 +207,27 @@ export default function AppointmentsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-gray-600">
                         <div>
                           <span className="font-medium text-gray-700">Date :</span>{' '}
-                          {format(
-                            new Date(appointment.startTs),
-                            'EEEE d MMMM yyyy',
-                            { locale: fr }
-                          )}
+                          {format(new Date(appointment.slotStart), 'EEEE d MMMM yyyy', { locale: fr })}
                         </div>
                         <div>
                           <span className="font-medium text-gray-700">Heure :</span>{' '}
-                          {format(
-                            new Date(appointment.startTs),
-                            "HH'h'mm",
-                            { locale: fr }
-                          )}
+                          {format(new Date(appointment.slotStart), "HH'h'mm", { locale: fr })}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">
-                            Service :
-                          </span>{' '}
+                          <span className="font-medium text-gray-700">Service :</span>{' '}
                           {appointment.service?.name}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">
-                            Téléphone :
-                          </span>{' '}
+                          <span className="font-medium text-gray-700">Téléphone :</span>{' '}
                           {appointment.customerPhone}
                         </div>
                         <div className="md:col-span-2">
-                          <span className="font-medium text-gray-700">
-                            Email :
-                          </span>{' '}
+                          <span className="font-medium text-gray-700">Email :</span>{' '}
                           {appointment.customerEmail}
                         </div>
                         {appointment.customerNotes && (
                           <div className="md:col-span-2">
-                            <span className="font-medium text-gray-700">
-                              Notes :
-                            </span>{' '}
+                            <span className="font-medium text-gray-700">Notes :</span>{' '}
                             {appointment.customerNotes}
                           </div>
                         )}
@@ -278,18 +242,12 @@ export default function AppointmentsPage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex flex-row lg:flex-col gap-2 lg:w-48">
                       {appointment.status === 'PENDING' && (
                         <>
                           <Button
                             size="sm"
-                            onClick={() =>
-                              handleUpdateStatus(
-                                appointment.id,
-                                'CONFIRMED' as AppointmentStatus
-                              )
-                            }
+                            onClick={() => handleUpdateStatus(appointment.id, 'CONFIRMED' as AppointmentStatus)}
                             fullWidth
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -298,12 +256,7 @@ export default function AppointmentsPage() {
                           <Button
                             size="sm"
                             variant="danger"
-                            onClick={() =>
-                              handleUpdateStatus(
-                                appointment.id,
-                                'CANCELLED' as AppointmentStatus
-                              )
-                            }
+                            onClick={() => handleUpdateStatus(appointment.id, 'CANCELLED' as AppointmentStatus)}
                             fullWidth
                           >
                             <XCircle className="h-4 w-4 mr-2" />
@@ -332,5 +285,3 @@ export default function AppointmentsPage() {
     </ArtisanLayout>
   );
 }
-
-

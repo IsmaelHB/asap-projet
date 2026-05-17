@@ -1,4 +1,3 @@
-// prisma/seed.ts
 import { PrismaClient, Role, PriceLevel, Complexity, AppointmentStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -66,7 +65,7 @@ async function main() {
     }
   });
 
-  const service1_2 = await prisma.service.create({
+  await prisma.service.create({
     data: {
       artisanId: artisan1.id,
       name: 'Installation WC',
@@ -79,7 +78,7 @@ async function main() {
     }
   });
 
-  const service1_3 = await prisma.service.create({
+  await prisma.service.create({
     data: {
       artisanId: artisan1.id,
       name: 'Débouchage canalisation',
@@ -94,11 +93,12 @@ async function main() {
 
   const today = new Date();
 
-  // Disponibilités Jean : 7 prochains jours (matin + aprem)
+  // Disponibilités Jean
   for (let i = 1; i <= 7; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
 
+    // CORRECTION : Availability = startTs
     await prisma.availability.create({
       data: {
         artisanId: artisan1.id,
@@ -164,7 +164,7 @@ async function main() {
     }
   });
 
-  await prisma.service.create({
+  const service2_2 = await prisma.service.create({
     data: {
       artisanId: artisan2.id,
       name: 'Installation tableau électrique',
@@ -207,7 +207,7 @@ async function main() {
       data: {
         artisanId: artisan2.id,
         startTs: new Date(date.setHours(13, 30, 0, 0)),
-      endTs: new Date(date.setHours(17, 30, 0, 0)),
+        endTs: new Date(date.setHours(17, 30, 0, 0)),
         isBooked: false
       }
     });
@@ -236,8 +236,7 @@ async function main() {
       lat: 48.8467,
       lng: 2.2945,
       phone: '0698765432',
-      description:
-        "Peintre en bâtiment avec 20 ans d'expérience. Travail soigné et ponctuel.",
+      description: "Peintre en bâtiment avec 20 ans d'expérience.",
       rating: 4.6,
       reviewCount: 89,
       priceLevel: PriceLevel.LOW,
@@ -285,10 +284,8 @@ async function main() {
     }
   });
 
-  // dispo un jour sur deux
   for (let i = 1; i <= 7; i++) {
     if (i % 2 === 0) continue;
-
     const date = new Date(today);
     date.setDate(date.getDate() + i);
 
@@ -374,7 +371,6 @@ async function main() {
     }
   });
 
-  // dispo matin/aprem/soir
   for (let i = 1; i <= 7; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
@@ -426,8 +422,9 @@ async function main() {
         customerEmail: 'sophie.dubois@example.com',
         customerPhone: '0623456789',
         customerNotes: "Fuite sous l'évier de cuisine",
-        startTs: slot1.startTs,
-        endTs: slot1.endTs,
+        // CORRECTION : Appointment = slotStart
+        slotStart: slot1.startTs, 
+        slotEnd: slot1.endTs,     
         status: AppointmentStatus.CONFIRMED
       }
     });
@@ -442,44 +439,29 @@ async function main() {
     where: { artisanId: artisan2.id, isBooked: false }
   });
 
-  if (slot2) {
-    const firstService2 = await prisma.service.findFirst({
-      where: { artisanId: artisan2.id }
+  if (slot2 && service2_2) {
+    await prisma.appointment.create({
+      data: {
+        artisanId: artisan2.id,
+        serviceId: service2_2.id,
+        customerName: 'Thomas Petit',
+        customerEmail: 'thomas.petit@example.com',
+        customerPhone: '0634567890',
+        customerNotes: 'Panne électrique dans le salon',
+        // CORRECTION : Appointment = slotStart
+        slotStart: slot2.startTs,
+        slotEnd: slot2.endTs,
+        status: AppointmentStatus.PENDING
+      }
     });
 
-    if (firstService2) {
-      await prisma.appointment.create({
-        data: {
-          artisanId: artisan2.id,
-          serviceId: firstService2.id,
-          customerName: 'Thomas Petit',
-          customerEmail: 'thomas.petit@example.com',
-          customerPhone: '0634567890',
-          customerNotes: 'Panne électrique dans le salon',
-          startTs: slot2.startTs,
-          endTs: slot2.endTs,
-          status: AppointmentStatus.PENDING
-        }
-      });
-
-      await prisma.availability.update({
-        where: { id: slot2.id },
-        data: { isBooked: true }
-      });
-    }
+    await prisma.availability.update({
+      where: { id: slot2.id },
+      data: { isBooked: true }
+    });
   }
 
   console.log('✅ Seed completed successfully!');
-  console.log('\n📊 Summary:');
-  console.log('  - 4 artisans created');
-  console.log('  - 11 services created');
-  console.log('  - ~100 availability slots created');
-  console.log('  - 2 sample appointments created');
-  console.log('\n🔐 Test credentials (password123 pour tous):');
-  console.log('  jean.dupont@example.com');
-  console.log('  marie.laurent@example.com');
-  console.log('  pierre.martin@example.com');
-  console.log('  ahmed.benzema@example.com');
 }
 
 main()

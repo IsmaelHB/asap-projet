@@ -33,7 +33,6 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
-// ENUMS IA (Indispensables pour le code TS)
 enum CallMode {
   NONE
   AUTO_AI
@@ -87,11 +86,11 @@ model Artisan {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  user            User          @relation(fields: [id], references: [id], onDelete: Cascade)
-  services        Service[]
-  availability    Availability[]
-  appointments    Appointment[]
-  live            ArtisanLive?
+  user         User           @relation(fields: [id], references: [id], onDelete: Cascade)
+  services     Service[]
+  availability Availability[]
+  appointments Appointment[]
+  live         ArtisanLive?
 
   @@index([city, category])
   @@map("artisans")
@@ -110,8 +109,8 @@ model Service {
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
-  artisan              Artisan       @relation(fields: [artisanId], references: [id], onDelete: Cascade)
-  appointments         Appointment[]
+  artisan      Artisan       @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   @@map("services")
 }
@@ -119,13 +118,16 @@ model Service {
 model Availability {
   id        String   @id @default(uuid())
   artisanId String   @map("artisan_id")
+  
+  // ICI c'est startTs/endTs (ne pas toucher)
   startTs   DateTime @map("start_ts")
   endTs     DateTime @map("end_ts")
   isBooked  Boolean  @default(false) @map("is_booked")
+  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  artisan   Artisan  @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  artisan Artisan @relation(fields: [artisanId], references: [id], onDelete: Cascade)
 
   @@index([artisanId, startTs])
   @@map("availability")
@@ -138,37 +140,42 @@ model Appointment {
   customerName         String            @map("customer_name")
   customerEmail        String            @map("customer_email")
   customerPhone        String            @map("customer_phone")
-  customerNotes        String?           @map("customer_notes")
-  slotStart              DateTime          @map("start_ts")
-  slotEnd               DateTime          @map("end_ts")
+  customerNotes        String?           @map("customer_notes") @db.Text
+  
+  // C'est ICI qu'on ajoute les photos
+  photos               String[]          @default([])
+  
+  slotStart            DateTime          @map("start_ts")
+  slotEnd              DateTime          @map("end_ts")
+  
   status               AppointmentStatus @default(PENDING)
   cancellationFeeCents Int               @default(0) @map("cancellation_fee_cents")
 
   // CHAMPS IA
-  callMode             CallMode          @default(AUTO_AI)
-  callStatus           CallStatus        @default(PENDING)
-  callBy               String?
-  callSummary          String?           @db.Text
+  callMode    CallMode   @default(AUTO_AI)
+  callStatus  CallStatus @default(PENDING)
+  callBy      String?
+  callSummary String?    @db.Text
 
-  createdAt            DateTime          @default(now()) @map("created_at")
-  updatedAt            DateTime          @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  artisan              Artisan           @relation(fields: [artisanId], references: [id], onDelete: Cascade)
-  service              Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  artisan Artisan @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
 
   @@index([artisanId, slotStart])
   @@map("appointments")
 }
 
 model ArtisanLive {
-  artisanId    String            @id @map("artisan_id")
-  currentLat   Decimal?          @map("current_lat") @db.Decimal(10, 8)
-  currentLng   Decimal?          @map("current_lng") @db.Decimal(11, 8)
-  status       ArtisanLiveStatus @default(OFFLINE)
-  nextFreeAt   DateTime?         @map("next_free_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
+  artisanId  String            @id @map("artisan_id")
+  currentLat Decimal?          @map("current_lat") @db.Decimal(10, 8)
+  currentLng Decimal?          @map("current_lng") @db.Decimal(11, 8)
+  status     ArtisanLiveStatus @default(OFFLINE)
+  nextFreeAt DateTime?         @map("next_free_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
 
-  artisan      Artisan           @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+  artisan Artisan @relation(fields: [artisanId], references: [id], onDelete: Cascade)
 
   @@map("artisan_live")
 }

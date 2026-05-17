@@ -1,0 +1,1407 @@
+{               
+
+    "nodes": [
+
+      {
+
+        "parameters": {
+
+          "content": "## Post Call Data",
+
+          "height": 176,
+
+          "width": 1376,
+
+          "color": 3
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 864],
+
+        "id": "57df6d5b-9a32-4ec2-8d9b-cad28642406e",
+
+        "name": "Sticky Note"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## 📞 Inbound Voice Agent\n## | [Created by Chase AI](https://www.skool.com/chase-ai)\n\n## How it
+
+  Works\n### - Inbound call received\n### - 11Labs executes tool call\n### - Tool call routed to n8n\n### - Flow executed,
+
+  response sent to 11Labs\n\n## APIs Needed\n### - Elevenlabs\n### - Google\n### - Twilio\n\n\n## Costs\n### - Twilio $20
+
+  (credits + phone #)\n### - ElevenLabs $5-25 / m\n",
+
+          "height": 624,
+
+          "width": 384,
+
+          "color": 7
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-656, 80],
+
+        "id": "f2914d9c-21fc-4805-916a-88f4008b8b33",
+
+        "name": "Sticky Note5"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "d1c1ad9b-98fe-4ad8-93e3-857a99181ed1",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [112, -16],
+
+        "id": "d40411af-b27b-4472-b6ca-aa70b5e5b628",
+
+        "name": "Webhook3",
+
+        "webhookId": "d1c1ad9b-98fe-4ad8-93e3-857a99181ed1"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "39b9e9a3-f7fb-40d1-a2dd-2afdf5fecf64",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 352],
+
+        "id": "833b7224-89fb-48f9-978f-8136c7d027b0",
+
+        "name": "Webhook4",
+
+        "webhookId": "39b9e9a3-f7fb-40d1-a2dd-2afdf5fecf64"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "getAll",
+
+          "calendar": {
+
+            "__rl": true,
+
+            "value": "ismael@hia-solutions.fr",
+
+            "mode": "list",
+
+            "cachedResultName": "ismael@hia-solutions.fr"
+
+          },
+
+          "timeMin": "={{ $json.query.startTime }}",
+
+          "timeMax": "={{ $json.query.endTime }}",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.googleCalendar",
+
+        "typeVersion": 1.3,
+
+        "position": [336, -16],
+
+        "id": "05c9580b-b5ed-4b9b-a3a6-37f0e70c7e81",
+
+        "name": "Get many events",
+
+        "alwaysOutputData": true,
+
+        "credentials": {
+
+          "googleCalendarOAuth2Api": {
+
+            "id": "fklUyycNjfAB2fPL",
+
+            "name": "Google Calendar account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "calendar": {
+
+            "__rl": true,
+
+            "value": "ismael@hia-solutions.fr",
+
+            "mode": "list",
+
+            "cachedResultName": "ismael@hia-solutions.fr"
+
+          },
+
+          "start": "={{ $json.query.startTime }}",
+
+          "end": "={{ $json.query.endTime }}",
+
+          "additionalFields": {
+
+            "attendees": ["={{ $json.query.Email }}"],
+
+            "description": "=Appointment with {{ $json.query.Prenom}} {{ $json.query.Nom }}. Email: {{ $json.query.Email }}",
+
+            "summary": "=1:1 w/  {{ $json.query.Prenom }} {{ $json.query.Nom }}"
+
+          }
+
+        },
+
+        "type": "n8n-nodes-base.googleCalendar",
+
+        "typeVersion": 1.3,
+
+        "position": [544, 352],
+
+        "id": "85e360f2-24a4-46a8-a611-19a3642091f6",
+
+        "name": "Create an event",
+
+        "credentials": {
+
+          "googleCalendarOAuth2Api": {
+
+            "id": "fklUyycNjfAB2fPL",
+
+            "name": "Google Calendar account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "update",
+
+          "calendar": {
+
+            "__rl": true,
+
+            "value": "ismael@hia-solutions.fr",
+
+            "mode": "list",
+
+            "cachedResultName": "ismael@hia-solutions.fr"
+
+          },
+
+          "eventId": "={{ $json.query.eventID }}",
+
+          "updateFields": {
+
+            "end": "={{ $json.query.endTime }}",
+
+            "start": "={{ $json.query.startTime }}"
+
+          }
+
+        },
+
+        "type": "n8n-nodes-base.googleCalendar",
+
+        "typeVersion": 1.3,
+
+        "position": [544, 528],
+
+        "id": "0adf3c60-1a9e-4852-891e-d30e2a348166",
+
+        "name": "Update an event",
+
+        "credentials": {
+
+          "googleCalendarOAuth2Api": {
+
+            "id": "fklUyycNjfAB2fPL",
+
+            "name": "Google Calendar account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "delete",
+
+          "calendar": {
+
+            "__rl": true,
+
+            "value": "ismael@hia-solutions.fr",
+
+            "mode": "list",
+
+            "cachedResultName": "ismael@hia-solutions.fr"
+
+          },
+
+          "eventId": "={{ $json.query.eventID }}",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.googleCalendar",
+
+        "typeVersion": 1.3,
+
+        "position": [544, 704],
+
+        "id": "3a5bb99d-a365-41f2-b0b8-7c3e6d1a4458",
+
+        "name": "Delete an event",
+
+        "credentials": {
+
+          "googleCalendarOAuth2Api": {
+
+            "id": "fklUyycNjfAB2fPL",
+
+            "name": "Google Calendar account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "d717847a-070f-4507-8c91-273c5ebe1d83",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 528],
+
+        "id": "d3cdd5f5-d514-44ad-87a5-d571d5c31ed2",
+
+        "name": "Webhook5",
+
+        "webhookId": "d717847a-070f-4507-8c91-273c5ebe1d83"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "8a053e00-f7d4-4e95-911a-acac32e3b173",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 704],
+
+        "id": "cb953900-992d-4880-8efe-251cdebc5735",
+
+        "name": "Webhook6",
+
+        "webhookId": "8a053e00-f7d4-4e95-911a-acac32e3b173"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [976, -16],
+
+        "id": "ecd0361c-3420-48e0-b72a-9a6222112963",
+
+        "name": "Respond to Webhook1"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [976, 352],
+
+        "id": "d454d5bf-b938-4ebf-8481-53a9d46a8862",
+
+        "name": "Respond to Webhook2"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [976, 528],
+
+        "id": "194eac89-186d-4e2e-9661-b13aa881da6f",
+
+        "name": "Respond to Webhook3"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [976, 704],
+
+        "id": "266669ec-f60f-4089-872b-348ccdc5d8f3",
+
+        "name": "Respond to Webhook4"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "jsCode": "// --- Configuration ---\nconst workdayStartHour = 8;\nconst workdayEndHour = 19;\nconst minGapMinutes =
+
+   60;\nconst timeZone = 'Europe/Paris';\n\n// --- Main Logic ---\nconst appointments = items[0].json.data || [];\n\nfunction
+
+   getMinutesDiff(endDate, startDate) {\n  const diffMilliseconds = endDate.getTime() - startDate.getTime();\n  return
+
+  Math.floor(diffMilliseconds / (1000 * 60));\n}\n\nconst validAppointments = appointments.filter(appt => appt && appt.id &&
+
+  appt.start);\n\nif (validAppointments.length === 0) {\n    return [{ \n        json: { \n            \"status\": \"Full
+
+  Availability\",\n            \"message\": \"The requested date has full availability during working hours.\" \n        } \n
+
+      }];\n\n} else {\n    const availableSlots = [];\n    validAppointments.sort((a, b) => new Date(a.start.dateTime) - new
+
+  Date(b.start.dateTime));\n\n    const datePart = validAppointments[0].start.dateTime.substring(0, 10);\n    const
+
+  offsetPart = validAppointments[0].start.dateTime.substring(19);\n\n    const workdayStart = new
+
+  Date(`${datePart}T${String(workdayStartHour).padStart(2, '0')}:00:00${offsetPart}`);\n    const workdayEnd = new
+
+  Date(`${datePart}T${String(workdayEndHour).padStart(2, '0')}:00:00${offsetPart}`);\n\n    let lastEventEnd =
+
+  workdayStart;\n\n    for (const event of validAppointments) {\n      const eventStart = new Date(event.start.dateTime);\n
+
+      const diffMinutes = getMinutesDiff(eventStart, lastEventEnd);\n\n      if (diffMinutes >= minGapMinutes) {\n
+
+  availableSlots.push({\n          start: lastEventEnd.toLocaleString('sv-SE', { timeZone: timeZone }).replace(' ', 'T'),\n
+
+          end: eventStart.toLocaleString('sv-SE', { timeZone: timeZone }).replace(' ', 'T'),\n          durationMinutes:
+
+  diffMinutes,\n        });\n      }\n      \n      const currentEventEnd = new Date(event.end.dateTime);\n      if
+
+  (currentEventEnd > lastEventEnd) {\n        lastEventEnd = currentEventEnd;\n      }\n    }\n\n    const finalGapMinutes =
+
+  getMinutesDiff(workdayEnd, lastEventEnd);\n\n    if (finalGapMinutes >= minGapMinutes) {\n      availableSlots.push({\n
+
+      start: lastEventEnd.toLocaleString('sv-SE', { timeZone: timeZone }).replace(' ', 'T'),\n        end:
+
+  workdayEnd.toLocaleString('sv-SE', { timeZone: timeZone }).replace(' ', 'T'),\n        durationMinutes: finalGapMinutes,\n
+
+       });\n    }\n    \n    const formattedSlots = availableSlots.map(slot => {\n        const startDate = new
+
+  Date(slot.start);\n        const endDate = new Date(slot.end);\n\n        const timeOptions = {\n            timeZone:
+
+  timeZone,\n            hour: 'numeric',\n            minute: '2-digit',\n            hour12: false,\n        };\n        \n
+
+          return {\n            ...slot,\n            startTimeFormatted: startDate.toLocaleTimeString('fr-FR',
+
+  timeOptions),\n            endTimeFormatted: endDate.toLocaleTimeString('fr-FR', timeOptions),\n            isoStart:
+
+  startDate.toLocaleString('sv-SE', { timeZone: timeZone }).replace(' ', 'T')\n        };\n    });\n\n    return [{ json: {
+
+  availableSlots: formattedSlots } }];\n}"
+
+        },
+
+        "type": "n8n-nodes-base.code",
+
+        "typeVersion": 2,
+
+        "position": [752, -16],
+
+        "id": "d7c99566-b59f-4e98-bfc1-28bff2200e4a",
+
+        "name": "Code in JavaScript"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "aggregate": "aggregateAllItemData",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.aggregate",
+
+        "typeVersion": 1,
+
+        "position": [544, -16],
+
+        "id": "f9996cc6-b382-44cd-a91f-f81d68d36a33",
+
+        "name": "Aggregate"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## checkAvailability",
+
+          "width": 1366,
+
+          "color": 4
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, -32],
+
+        "id": "d035f38a-05b6-486f-9252-cb2d8ad31a28",
+
+        "name": "Sticky Note1"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## getUserBookings",
+
+          "height": 176,
+
+          "width": 1366,
+
+          "color": 7
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 144],
+
+        "id": "6c843a67-aaae-4170-b066-ccb7b48f69a2",
+
+        "name": "Sticky Note2"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## bookAppointment",
+
+          "width": 1366,
+
+          "color": 2
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 336],
+
+        "id": "e52fa0dd-04b9-4a43-96aa-0972386ad8e3",
+
+        "name": "Sticky Note3"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "9323487c-6fc1-479b-b7d5-95bf3dd4eea1",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 176],
+
+        "id": "de6f4384-a6b9-4097-a28e-6e02ed45112a",
+
+        "name": "Webhook7",
+
+        "webhookId": "9323487c-6fc1-479b-b7d5-95bf3dd4eea1"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "getAll",
+
+          "calendar": {
+
+            "__rl": true,
+
+            "value": "ismael@hia-solutions.fr",
+
+            "mode": "list",
+
+            "cachedResultName": "ismael@hia-solutions.fr"
+
+          },
+
+          "timeMin": "={{ $json.query.startTime }}",
+
+          "timeMax": "={{ $json.query.endTime }}",
+
+          "options": {
+
+            "query": "={{ $json.query.email }}"
+
+          }
+
+        },
+
+        "type": "n8n-nodes-base.googleCalendar",
+
+        "typeVersion": 1.3,
+
+        "position": [336, 176],
+
+        "id": "a670da0a-b12b-475a-9946-f2d9bfa48b00",
+
+        "name": "Get User Bookings",
+
+        "alwaysOutputData": true,
+
+        "credentials": {
+
+          "googleCalendarOAuth2Api": {
+
+            "id": "fklUyycNjfAB2fPL",
+
+            "name": "Google Calendar account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [976, 176],
+
+        "id": "55bd1360-fb42-418b-8aac-3990d71ad9ac",
+
+        "name": "Respond to Webhook5"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "aggregate": "aggregateAllItemData",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.aggregate",
+
+        "typeVersion": 1,
+
+        "position": [544, 176],
+
+        "id": "3b7f7ae5-4500-4995-9699-aa041d283c80",
+
+        "name": "Aggregate1"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "jsCode": "const events = items[0].json.data;\n\nif (!events || events.length === 0) {\n    return [{ \n
+
+  json: { \n            \"allEvents\": [] \n        } \n    }];\n}\n\nconst validEvents = events.filter(event => event &&
+
+  event.id);\n\nconst simplifiedEvents = validEvents.map(event => {\n  const attendeeEmail = event.attendees?.[0]?.email ||
+
+  null;\n  const meetingLink = event.hangoutLink || event.conferenceData?.entryPoints?.find(e => e.entryPointType ===
+
+  'video')?.uri || null;\n  \n  return {\n    eventId: event.id,\n    summary: event.summary,\n    startTime:
+
+  event.start.dateTime,\n    endTime: event.end.dateTime,\n    attendeeEmail: attendeeEmail,\n    description:
+
+  event.description || null,\n    meetingLink: meetingLink\n  };\n});\n\nreturn [{ \n  json: { \n    \"allEvents\":
+
+  simplifiedEvents \n  } \n}];"
+
+        },
+
+        "type": "n8n-nodes-base.code",
+
+        "typeVersion": 2,
+
+        "position": [768, 176],
+
+        "id": "38d763ae-1d98-4b0d-b5ea-8e9dae675591",
+
+        "name": "Code in JavaScript1",
+
+        "alwaysOutputData": false,
+
+        "onError": "continueRegularOutput"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## modifyAppointment",
+
+          "width": 1366,
+
+          "color": 5
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 512],
+
+        "id": "69f01858-7e21-458f-add2-719ec91158a7",
+
+        "name": "Sticky Note6"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## cancelAppointment",
+
+          "width": 1366,
+
+          "color": 6
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 688],
+
+        "id": "d311179e-5173-4e34-9c9d-ab9745147f71",
+
+        "name": "Sticky Note7"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "httpMethod": "POST",
+
+          "path": "bd03860a-7458-4a1a-b514-835d6daa2c05",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 896],
+
+        "id": "a7eb7ac1-2764-4ed9-93a6-f9880b843128",
+
+        "name": "Webhook",
+
+        "webhookId": "bd03860a-7458-4a1a-b514-835d6daa2c05"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "230ab52d-57d8-4dbb-880e-aa20050e0e4f",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 1072],
+
+        "id": "973ea3eb-9037-48d8-8617-c10dcc81b546",
+
+        "name": "Webhook1",
+
+        "webhookId": "230ab52d-57d8-4dbb-880e-aa20050e0e4f"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [1008, 1072],
+
+        "id": "71b0a2e0-319f-449f-b627-f918aa14af66",
+
+        "name": "Respond to Webhook"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## getClients",
+
+          "width": 1382,
+
+          "color": 4
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 1056],
+
+        "id": "988ba1f9-f697-4e35-9933-63c88d8d57a4",
+
+        "name": "Sticky Note4"
+
+      },
+
+      {
+
+        "parameters": { "options": {} },
+
+        "type": "n8n-nodes-base.respondToWebhook",
+
+        "typeVersion": 1.4,
+
+        "position": [1008, 1248],
+
+        "id": "1d3d2bba-69b9-4ad1-84a3-2aac750a5fae",
+
+        "name": "Respond to Webhook6"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "## addClients",
+
+          "width": 1382,
+
+          "color": 7
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [-160, 1232],
+
+        "id": "520e5eb8-c425-407c-a006-934b5a138d42",
+
+        "name": "Sticky Note8"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "path": "c82a4b67-af64-41f7-a1bd-9e0f77ad0aeb",
+
+          "responseMode": "responseNode",
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.webhook",
+
+        "typeVersion": 2.1,
+
+        "position": [96, 1248],
+
+        "id": "414fc719-eeb8-4864-b5af-c1011ee78876",
+
+        "name": "Webhook2",
+
+        "webhookId": "c82a4b67-af64-41f7-a1bd-9e0f77ad0aeb"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "append",
+
+          "documentId": {
+
+            "__rl": true,
+
+            "value": "1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c",
+
+            "mode": "list",
+
+            "cachedResultName": "HIA-clients",
+
+            "cachedResultUrl":
+
+  "https://docs.google.com/spreadsheets/d/1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c/edit?usp=drivesdk"
+
+          },
+
+          "sheetName": {
+
+            "__rl": true,
+
+            "value": "gid=0",
+
+            "mode": "list",
+
+            "cachedResultName": "Feuille 1",
+
+            "cachedResultUrl":
+
+  "https://docs.google.com/spreadsheets/d/1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c/edit#gid=0"
+
+          },
+
+          "columns": {
+
+            "mappingMode": "defineBelow",
+
+            "value": {
+
+              "Nom": "={{ $json.query.Nom }}",
+
+              "Prenom ": "={{ $json.query.Prenom }}",
+
+              "Email ": "={{ $json.query.Email }}",
+
+              "Telephone": "={{ $json.query.Telephone }}"
+
+            },
+
+            "matchingColumns": [],
+
+            "schema": [
+
+              {
+
+                "id": "Nom",
+
+                "displayName": "Nom",
+
+                "required": false,
+
+                "defaultMatch": false,
+
+                "display": true,
+
+                "type": "string",
+
+                "canBeUsedToMatch": true,
+
+                "removed": false
+
+              },
+
+              {
+
+                "id": "Prenom ",
+
+                "displayName": "Prenom ",
+
+                "required": false,
+
+                "defaultMatch": false,
+
+                "display": true,
+
+                "type": "string",
+
+                "canBeUsedToMatch": true,
+
+                "removed": false
+
+              },
+
+              {
+
+                "id": "Email ",
+
+                "displayName": "Email ",
+
+                "required": false,
+
+                "defaultMatch": false,
+
+                "display": true,
+
+                "type": "string",
+
+                "canBeUsedToMatch": true,
+
+                "removed": false
+
+              },
+
+              {
+
+                "id": "Telephone",
+
+                "displayName": "Telephone",
+
+                "required": false,
+
+                "defaultMatch": false,
+
+                "display": true,
+
+                "type": "string",
+
+                "canBeUsedToMatch": true,
+
+                "removed": false
+
+              }
+
+            ],
+
+            "attemptToConvertTypes": false,
+
+            "convertFieldsToString": false
+
+          },
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.googleSheets",
+
+        "typeVersion": 4.7,
+
+        "position": [560, 1248],
+
+        "id": "af7983cf-6fdc-456e-893c-5dba36341fb8",
+
+        "name": "Append row in sheet1",
+
+        "credentials": {
+
+          "googleSheetsOAuth2Api": {
+
+            "id": "CMQP48IiXcF9oRs4",
+
+            "name": "Google Sheets account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "content": "@[youtube](8evYjk8vXtI)",
+
+          "height": 512,
+
+          "width": 880
+
+        },
+
+        "type": "n8n-nodes-base.stickyNote",
+
+        "typeVersion": 1,
+
+        "position": [3008, 224],
+
+        "id": "e88eb1d2-104e-4a27-b7c5-307ea53142b8",
+
+        "name": "Sticky Note9"
+
+      },
+
+      {
+
+        "parameters": {
+
+          "operation": "append",
+
+          "documentId": {
+
+            "__rl": true,
+
+            "value": "1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c",
+
+            "mode": "id"
+
+          },
+
+          "sheetName": {
+
+            "__rl": true,
+
+            "value": "gid=0",
+
+            "mode": "list",
+
+            "cachedResultName": "Feuille 1",
+
+            "cachedResultUrl":
+
+  "https://docs.google.com/spreadsheets/d/1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c/edit#gid=0"
+
+          },
+
+          "columns": {
+
+            "mappingMode": "autoMapInputData",
+
+            "value": {},
+
+            "matchingColumns": [],
+
+            "schema": [
+
+              { "id": "Nom de famille", "displayName": "Nom de famille", "required": false, "defaultMatch": false, "display":
+
+   true, "type": "string", "canBeUsedToMatch": true },
+
+              { "id": "Prénom ", "displayName": "Prénom ", "required": false, "defaultMatch": false, "display": true, "type":
+
+   "string", "canBeUsedToMatch": true },
+
+              { "id": "Email ", "displayName": "Email ", "required": false, "defaultMatch": false, "display": true, "type":
+
+  "string", "canBeUsedToMatch": true },
+
+              { "id": "N° téléphone", "displayName": "N° téléphone", "required": false, "defaultMatch": false, "display":
+
+  true, "type": "string", "canBeUsedToMatch": true },
+
+              { "id": "headers", "displayName": "headers", "required": false, "defaultMatch": false, "display": true, "type":
+
+   "string", "canBeUsedToMatch": true, "removed": true },
+
+              { "id": "params", "displayName": "params", "required": false, "defaultMatch": false, "display": true, "type":
+
+  "string", "canBeUsedToMatch": true, "removed": true },
+
+              { "id": "query", "displayName": "query", "required": false, "defaultMatch": false, "display": true, "type":
+
+  "string", "canBeUsedToMatch": true, "removed": true },
+
+              { "id": "body", "displayName": "body", "required": false, "defaultMatch": false, "display": true, "type":
+
+  "string", "canBeUsedToMatch": true, "removed": true },
+
+              { "id": "webhookUrl", "displayName": "webhookUrl", "required": false, "defaultMatch": false, "display": true,
+
+  "type": "string", "canBeUsedToMatch": true, "removed": true },
+
+              { "id": "executionMode", "displayName": "executionMode", "required": false, "defaultMatch": false, "display":
+
+  true, "type": "string", "canBeUsedToMatch": true, "removed": true }
+
+            ],
+
+            "attemptToConvertTypes": false,
+
+            "convertFieldsToString": false
+
+          },
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.googleSheets",
+
+        "typeVersion": 4.7,
+
+        "position": [1008, 896],
+
+        "id": "5f87cb25-8067-4096-a73e-728869074d06",
+
+        "name": "Append row in sheet",
+
+        "credentials": {
+
+          "googleSheetsOAuth2Api": {
+
+            "id": "CMQP48IiXcF9oRs4",
+
+            "name": "Google Sheets account"
+
+          }
+
+        }
+
+      },
+
+      {
+
+        "parameters": {
+
+          "documentId": {
+
+            "__rl": true,
+
+            "value": "1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c",
+
+            "mode": "list",
+
+            "cachedResultName": "HIA-clients",
+
+            "cachedResultUrl":
+
+  "https://docs.google.com/spreadsheets/d/1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c/edit?usp=drivesdk"
+
+          },
+
+          "sheetName": {
+
+            "__rl": true,
+
+            "value": "gid=0",
+
+            "mode": "list",
+
+            "cachedResultName": "Feuille 1",
+
+            "cachedResultUrl":
+
+  "https://docs.google.com/spreadsheets/d/1Zd3vQSvKt_ihca4pvj0ejBHjym5KxkgMmYty_a2aB9c/edit#gid=0"
+
+          },
+
+          "options": {}
+
+        },
+
+        "type": "n8n-nodes-base.googleSheets",
+
+        "typeVersion": 4.7,
+
+        "position": [560, 1072],
+
+        "id": "7a2d517b-6397-4adb-b215-fb83a0ea3c52",
+
+        "name": "Get row(s) in sheet",
+
+        "credentials": {
+
+          "googleSheetsOAuth2Api": {
+
+            "id": "CMQP48IiXcF9oRs4",
+
+            "name": "Google Sheets account"
+
+          }
+
+        }
+
+      }
+
+    ],
+
+    "connections": {
+
+      "Webhook3": { "main": [[{ "node": "Get many events", "type": "main", "index": 0 }]] },
+
+      "Webhook4": { "main": [[{ "node": "Create an event", "type": "main", "index": 0 }]] },
+
+      "Get many events": { "main": [[{ "node": "Aggregate", "type": "main", "index": 0 }]] },
+
+      "Create an event": { "main": [[{ "node": "Respond to Webhook2", "type": "main", "index": 0 }]] },
+
+      "Update an event": { "main": [[{ "node": "Respond to Webhook3", "type": "main", "index": 0 }]] },
+
+      "Delete an event": { "main": [[{ "node": "Respond to Webhook4", "type": "main", "index": 0 }]] },
+
+      "Webhook5": { "main": [[{ "node": "Update an event", "type": "main", "index": 0 }]] },
+
+      "Webhook6": { "main": [[{ "node": "Delete an event", "type": "main", "index": 0 }]] },
+
+      "Code in JavaScript": { "main": [[{ "node": "Respond to Webhook1", "type": "main", "index": 0 }]] },
+
+      "Aggregate": { "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]] },
+
+      "Webhook7": { "main": [[{ "node": "Get User Bookings", "type": "main", "index": 0 }]] },
+
+      "Get User Bookings": { "main": [[{ "node": "Aggregate1", "type": "main", "index": 0 }]] },
+
+      "Aggregate1": { "main": [[{ "node": "Code in JavaScript1", "type": "main", "index": 0 }]] },
+
+      "Code in JavaScript1": { "main": [[{ "node": "Respond to Webhook5", "type": "main", "index": 0 }]] },
+
+      "Webhook": { "main": [[{ "node": "Append row in sheet", "type": "main", "index": 0 }]] },
+
+      "Webhook1": { "main": [[{ "node": "Get row(s) in sheet", "type": "main", "index": 0 }]] },
+
+      "Webhook2": { "main": [[{ "node": "Append row in sheet1", "type": "main", "index": 0 }]] },
+
+      "Append row in sheet1": { "main": [[{ "node": "Respond to Webhook6", "type": "main", "index": 0 }]] },
+
+      "Get row(s) in sheet": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+
+    },
+
+    "pinData": {},
+
+    "meta": {
+
+      "templateCredsSetupCompleted": true,
+
+      "instanceId": "2362b6a7306905086950f44e1e4a8ae1b4034c6dcaee4d02ba5e802d7487956a"
+
+    }
+
+  }
